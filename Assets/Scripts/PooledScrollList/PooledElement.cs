@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Assets.Scripts.PooledScrollList
 {
@@ -21,8 +20,6 @@ namespace Assets.Scripts.PooledScrollList
             }
         }
 
-        public abstract T Data { get; }
-
-        public abstract void Setup(int index, List<T> data);
+        public abstract T Data { get; set; }
     }
 }

@@ -5,7 +5,7 @@ using UnityEngine.UI;
 namespace Assets.Scripts.PooledScrollList
 {
     [RequireComponent(typeof(ScrollRect))]
-    public abstract class PooledScrollRectController<T, TElement> : MonoBehaviour where TElement : PooledElement<T>
+    public abstract class PooledScrollRectController<TData, TElement> : MonoBehaviour where TElement : PooledElement<TData>
     {
         private enum ReorientMethod
         {
@@ -13,8 +13,10 @@ namespace Assets.Scripts.PooledScrollList
             BottomToTop
         }
 
+        private Pool<TElement> _pool;
         private float _elementSize;
         private float _layoutSpacing;
+        private RectOffset _padding;
         private ScrollRect _scrollRect;
         private LayoutElement _spaceElement;
 
@@ -22,23 +24,18 @@ namespace Assets.Scripts.PooledScrollList
         protected int LastElementsCulledAbove = -1;
 
         public TElement Template;
-        public List<T> Data = new List<T>();
+        public int PoolCapacity;
+        public RectTransform ExternalViewPort;
+        public List<TData> Data = new List<TData>();
 
-        protected Transform Content
-        {
-            get { return _scrollRect.content; }
-        }
-
-        protected int TotalNumElements
+        protected int TotalElementsCount
         {
             get { return Data.Count; }
         }
 
-        public void Initialize(List<T> data)
+        public void Initialize(List<TData> data)
         {
             Data = data;
-            UpdateContent();
-
             Initialize();
         }
 
@@ -49,21 +46,21 @@ namespace Assets.Scripts.PooledScrollList
             UpdateActiveElements();
         }
 
-        public void Add(T item)
+        public void Add(TData item)
         {
             Data.Add(item);
             UpdateContent();
             UpdateActiveElements();
         }
 
-        public void Insert(int index, T item)
+        public void Insert(int index, TData item)
         {
             Data.Insert(index, item);
             UpdateContent();
             UpdateActiveElements();
         }
 
-        public void Remove(T item)
+        public void Remove(TData item)
         {
             Data.Remove(item);
             UpdateContent();
@@ -84,44 +81,42 @@ namespace Assets.Scripts.PooledScrollList
             UpdateActiveElements();
         }
 
-        protected virtual void OnEnable()
+        protected virtual void Awake()
         {
-            if (_scrollRect == null)
-            {
-                _scrollRect = GetComponent<ScrollRect>();
-            }
+            _pool = new Pool<TElement>(Template, transform, PoolCapacity);
 
+            _scrollRect = GetComponent<ScrollRect>();
             _scrollRect.onValueChanged.AddListener(ScrollMoved);
 
-            if (_spaceElement == null)
-            {
-                _spaceElement = CreateSpaceElement(_scrollRect, 0f);
-            }
-
+            _spaceElement = CreateSpaceElement(_scrollRect, 0f);
             _elementSize = _scrollRect.vertical ? Template.RectTransform.rect.height : Template.RectTransform.rect.width;
 
             var layoutGroup = _scrollRect.content.GetComponent<HorizontalOrVerticalLayoutGroup>();
             if (layoutGroup != null)
             {
                 _layoutSpacing = layoutGroup.spacing;
+                _padding = layoutGroup.padding;
                 _elementSize += _layoutSpacing;
             }
+        }
 
+        protected virtual void Start()
+        {
             Initialize();
         }
 
         protected void UpdateContent()
         {
-            AdjustContentSize(_elementSize * TotalNumElements);
+            AdjustContentSize(_elementSize * TotalElementsCount);
 
-            var scrollAreaSize = _scrollRect.vertical ? ((RectTransform) _scrollRect.transform).rect.height : ((RectTransform) _scrollRect.transform).rect.width;
+            var scrollAreaSize = ExternalViewPort != null ? GetScrollAreaSize(ExternalViewPort) : GetScrollAreaSize(_scrollRect.viewport);
             var elementsVisibleInScrollArea = Mathf.CeilToInt(scrollAreaSize / _elementSize);
-            var elementsCulledAbove = Mathf.Clamp(Mathf.FloorToInt(GetScrollRectNormalizedPosition() * (TotalNumElements - elementsVisibleInScrollArea)), 0,
-                Mathf.Clamp(TotalNumElements - (elementsVisibleInScrollArea + 1), 0, int.MaxValue));
+            var elementsCulledAbove = Mathf.Clamp(Mathf.FloorToInt(GetScrollRectNormalizedPosition() * (TotalElementsCount - elementsVisibleInScrollArea)), 0,
+                Mathf.Clamp(TotalElementsCount - (elementsVisibleInScrollArea + 1), 0, int.MaxValue));
 
             AdjustSpaceElement(elementsCulledAbove * _elementSize);
 
-            var requiredElementsInList = Mathf.Min(elementsVisibleInScrollArea + 1, TotalNumElements);
+            var requiredElementsInList = Mathf.Min(elementsVisibleInScrollArea + 1, TotalElementsCount);
 
             if (ActiveElements.Count != requiredElementsInList)
             {
@@ -140,43 +135,55 @@ namespace Assets.Scripts.PooledScrollList
             for (var i = 0; i < ActiveElements.Count; i++)
             {
                 var activeElement = ActiveElements[i];
-                if (!activeElement.Data.Equals(Data[LastElementsCulledAbove + i]))
+                var activeData = Data[LastElementsCulledAbove + i];
+
+                if (!activeElement.Data.Equals(activeData))
                 {
-                    activeElement.Setup(LastElementsCulledAbove + i, Data);
+                    activeElement.Data = activeData;
                 }
             }
         }
 
         protected virtual void ResetPosition()
         {
-            _scrollRect.normalizedPosition = Vector2.zero;
+            if (_scrollRect.vertical)
+            {
+                _scrollRect.verticalNormalizedPosition = 1f;
+            }
+            else
+            {
+                _scrollRect.horizontalNormalizedPosition = 0f;
+            }
         }
 
         protected virtual TElement CreateElement(int index)
         {
-            var newElement = Instantiate(Template);
+            var newElement = _pool.GetNext();
             newElement.transform.SetParent(_scrollRect.content, false);
             newElement.transform.SetSiblingIndex(index);
-            newElement.Setup(index, Data);
+            newElement.Data = Data[index];
 
             return newElement;
         }
 
-        protected virtual void OnDisable()
-        {
-            _scrollRect.onValueChanged.RemoveListener(ScrollMoved);
-        }
-
         protected virtual void OnDestroy()
         {
-            Destroy(_spaceElement.gameObject);
-
             for (var i = 0; i < ActiveElements.Count; i++)
             {
-                Destroy(ActiveElements[i].gameObject);
+                _pool.Return(ActiveElements[i]);
             }
 
             ActiveElements.Clear();
+
+            _pool.Dispose();
+            _scrollRect.onValueChanged.RemoveListener(ScrollMoved);
+
+            Destroy(_spaceElement.gameObject);
+        }
+
+        private float GetScrollAreaSize(RectTransform viewPort)
+        {
+            return _scrollRect.vertical ? viewPort.rect.height : viewPort.rect.width;
         }
 
         private void ScrollMoved(Vector2 delta)
@@ -191,10 +198,20 @@ namespace Assets.Scripts.PooledScrollList
 
             if (_scrollRect.vertical)
             {
+                if (_padding != null)
+                {
+                    size += _padding.top + _padding.bottom;
+                }
+
                 currentSize.y = size;
             }
             else
             {
+                if (_padding != null)
+                {
+                    size += _padding.left + _padding.right;
+                }
+
                 currentSize.x = size;
             }
 
@@ -234,12 +251,12 @@ namespace Assets.Scripts.PooledScrollList
         {
             for (var i = 0; i < ActiveElements.Count; i++)
             {
-                Destroy(ActiveElements[i].gameObject);
+                _pool.Return(ActiveElements[i]);
             }
 
             ActiveElements.Clear();
 
-            for (var i = 0; i < requiredElementsInList && i + numElementsCulledAbove < TotalNumElements; i++)
+            for (var i = 0; i < requiredElementsInList && i + numElementsCulledAbove < TotalElementsCount; i++)
             {
                 ActiveElements.Add(CreateElement(i + numElementsCulledAbove));
             }
@@ -259,7 +276,7 @@ namespace Assets.Scripts.PooledScrollList
                 ActiveElements.Add(top);
 
                 top.transform.SetSiblingIndex(ActiveElements[ActiveElements.Count - 2].transform.GetSiblingIndex() + 1);
-                top.Setup(elementsCulledAbove + ActiveElements.Count - 1, Data);
+                top.Data = Data[elementsCulledAbove + ActiveElements.Count - 1];
             }
             else
             {
@@ -268,7 +285,7 @@ namespace Assets.Scripts.PooledScrollList
                 ActiveElements.Insert(0, bottom);
 
                 bottom.transform.SetSiblingIndex(ActiveElements[1].transform.GetSiblingIndex());
-                bottom.Setup(elementsCulledAbove, Data);
+                bottom.Data = Data[elementsCulledAbove];
             }
         }
 
