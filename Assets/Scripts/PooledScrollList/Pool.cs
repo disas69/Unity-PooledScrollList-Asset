@@ -24,7 +24,7 @@ namespace Assets.Scripts.PooledScrollList
             _itemsQueue = new Queue<T>(poolCapacity);
 
             _poolRoot = new GameObject(string.Format("[{0}] Pool", itemPrefab.GetType().Name)).transform;
-            _poolRoot.SetParent(parentObject);
+            _poolRoot.SetParent(parentObject, false);
 
             for (var i = 0; i < poolCapacity; i++)
             {
@@ -42,7 +42,7 @@ namespace Assets.Scripts.PooledScrollList
             if (_itemsQueue.Count > 0)
             {
                 item = _itemsQueue.Dequeue();
-                item.transform.SetParent(_parentObject);
+                item.transform.SetParent(_parentObject, false);
                 item.gameObject.SetActive(true);
             }
             else
@@ -58,7 +58,7 @@ namespace Assets.Scripts.PooledScrollList
             item.gameObject.SetActive(false);
             item.transform.position = Vector3.zero;
             item.transform.localEulerAngles = Vector3.zero;
-            item.transform.SetParent(_poolRoot);
+            item.transform.SetParent(_poolRoot, false);
 
             _itemsQueue.Enqueue(item);
         }
