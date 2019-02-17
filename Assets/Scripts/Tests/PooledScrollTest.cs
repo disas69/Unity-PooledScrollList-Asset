@@ -6,7 +6,8 @@ namespace Assets.Scripts.Tests
 {
     public class PooledScrollTest : MonoBehaviour
     {
-        public ItemScrollRectController ScrollRectController;
+        public ItemLayoutController LayoutController;
+        public ItemGridController GridController;
         public InputField InputField;
         public int Count;
         public List<Color> Colors;
@@ -34,7 +35,15 @@ namespace Assets.Scripts.Tests
                 data.Add(new ItemData {Color = Colors[Random.Range(0, Colors.Count)], Number = i + 1});
             }
 
-            ScrollRectController.Initialize(data);
+            if (LayoutController != null)
+            {
+                LayoutController.Initialize(data);
+            }
+
+            if (GridController != null)
+            {
+                GridController.Initialize(data);
+            }
         }
     }
 }
