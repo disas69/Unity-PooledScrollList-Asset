@@ -1,9 +1,9 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
-namespace Assets.Scripts.PooledScrollList
+namespace PooledScrollList.Controller
 {
-    public class PooledLayoutController<TData, TElement> : PooledScrollRectController<TData, TElement> where TElement : PooledElement<TData>
+    public class PooledScrollRectController : PooledScrollRectBase
     {
         private LayoutElement _spaceElement;
 

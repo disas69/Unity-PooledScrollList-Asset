@@ -2,16 +2,16 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Assets.Scripts.PooledScrollList
+namespace PooledScrollList.Controller
 {
-    public class PooledGridController<TData, TElement> : PooledScrollRectController<TData, TElement> where TElement : PooledElement<TData>
+    public class PooledScrollRectGridController : PooledScrollRectBase
     {
         private readonly List<LayoutElement> _activeSpaceElements = new List<LayoutElement>();
 
         private Pool<LayoutElement> _spaceElenemtsPool;
         private int _constraintCount;
 
-        public int SpaceElementsPoolCapacity;
+        public int SpaceElementsPoolCapacity = 10;
 
         protected override void Awake()
         {

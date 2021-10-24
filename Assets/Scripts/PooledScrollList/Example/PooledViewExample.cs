@@ -1,25 +1,28 @@
 ﻿using System;
+using PooledScrollList.Data;
+using PooledScrollList.View;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Assets.Scripts.Tests
+namespace PooledScrollList.Example
 {
     [Serializable]
-    public class ItemData
+    public class PooledDataExample : PooledData
     {
         public Color Color;
         public int Number;
     }
 
-    public class Item : MonoBehaviour
+    public class PooledViewExample : PooledView
     {
         public Image Image;
         public Text Number;
-        public ItemData Data;
 
-        public void Setup(ItemData itemData)
+        public override void SetData(PooledData data)
         {
-            Data = itemData;
+            base.SetData(data);
+
+            var itemData = (PooledDataExample) data;
             Image.color = itemData.Color;
             Number.text = itemData.Number.ToString();
         }

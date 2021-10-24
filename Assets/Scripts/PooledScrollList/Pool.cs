@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace Assets.Scripts.PooledScrollList
+namespace PooledScrollList
 {
     public class Pool<T> : IDisposable where T : Component
     {

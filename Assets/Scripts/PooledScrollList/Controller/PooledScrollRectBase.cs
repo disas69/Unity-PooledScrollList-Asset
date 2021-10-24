@@ -1,11 +1,13 @@
 ﻿using System.Collections.Generic;
+using PooledScrollList.Data;
+using PooledScrollList.View;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Assets.Scripts.PooledScrollList
+namespace PooledScrollList.Controller
 {
     [RequireComponent(typeof(ScrollRect))]
-    public abstract class PooledScrollRectController<TData, TElement> : MonoBehaviour where TElement : PooledElement<TData>
+    public abstract class PooledScrollRectBase : MonoBehaviour
     {
         protected enum ReorientMethod
         {
@@ -13,9 +15,10 @@ namespace Assets.Scripts.PooledScrollList
             BottomToTop
         }
 
-        private Pool<TElement> _elementsPool;
+        private Pool<PooledElement> _elementsPool;
 
-        protected readonly List<TElement> ActiveElements = new List<TElement>();
+        protected readonly List<PooledElement> ActiveElements = new List<PooledElement>();
+        protected readonly List<PooledData> Data = new List<PooledData>();
 
         protected ScrollRect ScrollRect;
         protected float LayoutSpacing;
@@ -23,19 +26,20 @@ namespace Assets.Scripts.PooledScrollList
         protected float ElementSize;
         protected int LastElementsCulledAbove = -1;
 
-        public TElement Template;
-        public int ElementsPoolCapacity;
+        public PooledElement Template;
+        public int PoolCapacity = 5;
         public RectTransform ExternalViewPort;
-        public List<TData> Data = new List<TData>();
+        public PooledDataProvider DataProvider;
 
         protected int TotalElementsCount
         {
             get { return Data.Count; }
         }
 
-        public virtual void Initialize(List<TData> data)
+        public virtual void Initialize(List<PooledData> data)
         {
-            Data = data;
+            Data.Clear();
+            Data.AddRange(data);
             Initialize();
         }
 
@@ -47,21 +51,21 @@ namespace Assets.Scripts.PooledScrollList
             UpdateActiveElements();
         }
 
-        public void Add(TData item)
+        public void Add(PooledData item)
         {
             Data.Add(item);
             UpdateContent();
             UpdateActiveElements();
         }
 
-        public void Insert(int index, TData item)
+        public void Insert(int index, PooledData item)
         {
             Data.Insert(index, item);
             UpdateContent();
             UpdateActiveElements();
         }
 
-        public void Remove(TData item)
+        public void Remove(PooledData item)
         {
             Data.Remove(item);
             UpdateContent();
@@ -84,7 +88,7 @@ namespace Assets.Scripts.PooledScrollList
 
         protected virtual void Awake()
         {
-            _elementsPool = new Pool<TElement>(Template, transform, ElementsPoolCapacity);
+            _elementsPool = new Pool<PooledElement>(Template, transform, PoolCapacity);
 
             ScrollRect = GetComponent<ScrollRect>();
             ScrollRect.onValueChanged.AddListener(ScrollMoved);
@@ -94,7 +98,14 @@ namespace Assets.Scripts.PooledScrollList
 
         protected virtual void Start()
         {
-            Initialize();
+            if (DataProvider != null)
+            {
+                Initialize(DataProvider.GetData());
+            }
+            else
+            {
+                Initialize();
+            }
         }
 
         protected abstract void UpdateContent();
@@ -130,7 +141,7 @@ namespace Assets.Scripts.PooledScrollList
             }
         }
 
-        protected virtual TElement CreateElement(int index)
+        protected virtual PooledElement CreateElement(int index)
         {
             var newElement = _elementsPool.GetNext();
             newElement.transform.SetParent(ScrollRect.content, false);
