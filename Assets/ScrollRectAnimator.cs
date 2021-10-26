@@ -10,8 +10,8 @@ namespace Assets
         private ScrollRect _scrollRect;
         private CanvasGroup _canvasGroup;
 
-        public float Influence;
-        public float Speed;
+        public float Duration = 1f;
+        public float Displacement = 50f;
 
         private void Awake()
         {
@@ -25,26 +25,30 @@ namespace Assets
 
             if (_scrollRect.vertical)
             {
-                contentPosition.y = -Influence;
+                contentPosition.y = -Displacement;
             }
             else
             {
-                contentPosition.x = Influence;
+                contentPosition.x = Displacement;
             }
 
             _scrollRect.content.localPosition = contentPosition;
-            StartCoroutine(AnimateScrollRect(Speed));
+            StartCoroutine(AnimateScrollRect(Duration));
         }
 
-        private IEnumerator AnimateScrollRect(float speed)
+        private IEnumerator AnimateScrollRect(float duration)
         {
             _canvasGroup.alpha = 0f;
 
-            while (_canvasGroup.alpha < 1f)
+            var time = Time.time;
+
+            while (Time.time - time < duration)
             {
-                _canvasGroup.alpha += Time.deltaTime * speed;
+                _canvasGroup.alpha = (Time.time - time) / duration;
                 yield return null;
             }
+
+            _canvasGroup.alpha = 1f;
         }
     }
 }

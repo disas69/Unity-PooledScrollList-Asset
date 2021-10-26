@@ -9,11 +9,15 @@ namespace PooledScrollList.Example
 {
     public class PooledDataProviderExample : PooledDataProvider
     {
-        public PooledScrollRectController ScrollRectController;
-        public PooledScrollRectGridController ScrollRectGridController;
+        public PooledScrollRectBase ScrollRectController;
         public InputField InputField;
         public int Count;
         public List<Color> Colors;
+
+        private void Awake()
+        {
+            InputField.text = Count.ToString();
+        }
 
         public override List<PooledData> GetData()
         {
@@ -32,8 +36,7 @@ namespace PooledScrollList.Example
         {
             if (InputField != null && !string.IsNullOrEmpty(InputField.text))
             {
-                int result;
-                if (int.TryParse(InputField.text, out result))
+                if (int.TryParse(InputField.text, out int result))
                 {
                     Count = result;
                 }
@@ -44,11 +47,6 @@ namespace PooledScrollList.Example
             if (ScrollRectController != null)
             {
                 ScrollRectController.Initialize(data);
-            }
-
-            if (ScrollRectGridController != null)
-            {
-                ScrollRectGridController.Initialize(data);
             }
         }
     }

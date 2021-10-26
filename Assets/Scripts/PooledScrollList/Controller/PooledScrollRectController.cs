@@ -20,7 +20,7 @@ namespace PooledScrollList.Controller
             }
             else
             {
-                Debug.LogWarning("Failed to get HorizontalOrVerticalLayoutGroup assigned to ScrollRect's content. PooledLayoutController won't work as expected.");
+                Debug.LogWarning("Failed to get HorizontalOrVerticalLayoutGroup assigned to ScrollRect's content. PooledScrollRectController won't work as expected.");
             }
 
             _spaceElement = CreateSpaceElement(ScrollRect, 0f);

@@ -29,7 +29,7 @@ namespace PooledScrollList.Controller
             }
             else
             {
-                Debug.LogWarning("Failed to get GridLayoutGroup assigned to ScrollRect's content. PooledGridController won't work as expected.");
+                Debug.LogWarning("Failed to get GridLayoutGroup assigned to ScrollRect's content. PooledScrollRectGridController won't work as expected.");
             }
         }
 
