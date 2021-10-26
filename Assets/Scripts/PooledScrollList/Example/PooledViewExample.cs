@@ -22,9 +22,9 @@ namespace PooledScrollList.Example
         {
             base.SetData(data);
 
-            var itemData = (PooledDataExample) data;
-            Image.color = itemData.Color;
-            Number.text = itemData.Number.ToString();
+            var exampleData = (PooledDataExample) data;
+            Image.color = exampleData.Color;
+            Number.text = exampleData.Number.ToString();
         }
     }
 }
