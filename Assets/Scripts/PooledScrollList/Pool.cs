@@ -56,7 +56,7 @@ namespace PooledScrollList
         public void Return(T item)
         {
             item.gameObject.SetActive(false);
-            item.transform.position = Vector3.zero;
+            item.transform.localPosition = Vector3.zero;
             item.transform.localEulerAngles = Vector3.zero;
             item.transform.SetParent(_poolRoot, false);
 
