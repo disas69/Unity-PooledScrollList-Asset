@@ -219,6 +219,7 @@ namespace PooledScrollList.Controller
         private void ScrollMoved(Vector2 delta)
         {
             UpdateContent();
+            UpdateActiveElements();
         }
 
         protected virtual void OnDestroy()
