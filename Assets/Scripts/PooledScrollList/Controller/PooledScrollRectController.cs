@@ -78,7 +78,7 @@ namespace PooledScrollList.Controller
 
         protected override void ReorientElement(ReorientMethod reorientMethod, int elementsCulledAbove)
         {
-            if (ActiveElements.Count == 0)
+            if (ActiveElements.Count <= 1)
             {
                 return;
             }
